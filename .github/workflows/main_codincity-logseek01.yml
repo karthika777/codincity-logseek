@@ -3,7 +3,7 @@ name: Build and deploy Python app to Azure Web App - codincity-logseek01
 on:
   push:
     branches:
-      - main
+      - none
   workflow_dispatch:
 
 jobs:
