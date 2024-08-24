@@ -1,66 +1,71 @@
 import os
 import gradio as gr
+import logging
+import pickle
+import time
+import pandas as pd
+from io import BytesIO
 from azure.storage.blob import BlobServiceClient
 from llama_index.experimental.query_engine import PandasQueryEngine
-from llama_index.core import Settings
 from llama_index.llms.azure_openai import AzureOpenAI
 from guardrails import Guard
 from guardrails.hub import ProfanityFree
-import pickle
-import time
-from io import BytesIO
-import pandas as pd
+
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def pickles_from_blob(connection_string, container_name):
     try:
+        logger.info("Connecting to Azure Blob Storage...")
         blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         container_client = blob_service_client.get_container_client(container_name)
        
         blobs_list = container_client.list_blobs()
-        
+        logger.info(f"Found {len(list(blobs_list))} blobs in container '{container_name}'.")
+
         data_frames = []
         
         for blob in blobs_list:
             if blob.name.endswith('.pkl'):  
+                logger.info(f"Downloading and processing blob: {blob.name}")
                 blob_client = container_client.get_blob_client(blob.name)
-                
                 blob_stream = BytesIO()
                 blob_client.download_blob().readinto(blob_stream)
-                
                 blob_stream.seek(0)
-          
                 df = pickle.load(blob_stream)
                 data_frames.append(df)
 
         if data_frames:
             concatenated_df = pd.concat(data_frames, ignore_index=True)
         else:
-            print("No pickle files found in the container.")
+            logger.warning("No pickle files found in the container.")
             concatenated_df = pd.DataFrame()
 
     except Exception as e:
-        print(f"An error occurred: {e}")
-        concatenated_df = pd.DataFrame() 
-
-    finally:
-        container_client.close()
-        blob_service_client.close()
+        logger.error(f"An error occurred while accessing Azure Blob Storage: {e}")
+        concatenated_df = pd.DataFrame()
 
     return concatenated_df
 
-connection_string = "DefaultEndpointsProtocol=https;AccountName=aimlloganalyticstest;AccountKey=ikPneEuYonwekpcNhuWK5bUHqr3Cc2jt4IgI0vX29PQqbAPeUN5UVsiCGrJXI6+7cB0ccL+durBq+ASt9LxRDQ==;EndpointSuffix=core.windows.net"
-container_name = "pickle-files"
+# Azure connection info
+connection_string = os.getenv('AZURE_STORAGE_CONNECTION_STRING', "DefaultEndpointsProtocol=https;AccountName=aimlloganalyticstest;AccountKey=ikPneEuYonwekpcNhuWK5bUHqr3Cc2jt4IgI0vX29PQqbAPeUN5UVsiCGrJXI6+7cB0ccL+durBq+ASt9LxRDQ==;EndpointSuffix=core.windows.net")
+container_name = os.getenv('AZURE_STORAGE_CONTAINER_NAME', "pickle-files")
 
+# Get the DataFrame from Azure Blob Storage
 df_final = pickles_from_blob(connection_string, container_name)
 
+# Setting up the LLM (Azure OpenAI)
 Settings.llm = AzureOpenAI(
-    engine="gpt-35-turbo",
-    model="gpt-35-turbo",
+    engine=os.getenv("AZURE_OPENAI_ENGINE", "gpt-35-turbo"),
+    model=os.getenv("AZURE_OPENAI_MODEL", "gpt-35-turbo"),
     temperature=0.0,
-    azure_endpoint="https://testopenaiforrag123.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-03-15-preview",
-    api_key="1b60b8b6bdd8474381342caf30f0af14",
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "https://testopenaiforrag123.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-03-15-preview"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY", "1b60b8b6bdd8474381342caf30f0af14"),
     api_version="2023-07-01-preview"
 )
+
+# Query engine setup
 query_engine = PandasQueryEngine(df=df_final, synthesize_response=True, response_mode="compact")
 guard = Guard().use(ProfanityFree())
 
@@ -97,11 +102,11 @@ class PersonaAgent:
         
         return response
 
+# Persona setup
 persona = {
     "name": "LogSeek - AI",
     "role": "your personal log assistant bot"
 }
-
 persona_agent = PersonaAgent(persona)
 
 def my_llm_api(prompt: str = None, **kwargs) -> str:
@@ -143,6 +148,7 @@ def gradio_interface(query, history):
         time.sleep(0.1)
         yield ans
 
+# Gradio interface setup
 interface = gr.Interface(
     fn=gradio_interface,  
     inputs=["text", "state"], 
@@ -152,5 +158,10 @@ interface = gr.Interface(
 )
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 8000))  
-    interface.launch(server_name="0.0.0.0", server_port=port)
+    try:
+        # Get the PORT environment variable set by Azure
+        port = int(os.getenv('PORT', 8000))
+        logger.info(f"Starting Gradio app on port {port}...")
+        interface.launch(server_name="0.0.0.0", server_port=port)
+    except Exception as e:
+        logger.error(f"Failed to start the app: {e}")
