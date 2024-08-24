@@ -28,11 +28,16 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Create release artifacts directory
+        run: mkdir release_artifacts
+
+      - name: Copy files to release_artifacts
+        run: |
+          rsync -av --exclude='release_artifacts' * release_artifacts/
+
       - name: Compress artifacts for deployment
         run: |
-          mkdir release_artifacts
-          cp -r * release_artifacts
-          cp -r release_artifacts/* /desired/destination/path
+          zip -r release.zip release_artifacts
 
       - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
