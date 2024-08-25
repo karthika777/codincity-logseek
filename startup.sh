@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Fail on any error
+set -e
+
 # Install the dependencies
 echo "Installing dependencies..."
 python -m pip install --no-cache-dir -r requirements.txt || { echo "Failed to install dependencies"; exit 1; }
@@ -9,4 +12,4 @@ PORT=${PORT:-8000}
 
 # Start the application
 echo "Starting the application on port $PORT..."
-python app.py --port=$PORT || { echo "Failed to start the application"; exit 1; }
+exec gunicorn --bind 0.0.0.0:$PORT app:app || { echo "Failed to start the application"; exit 1; }
