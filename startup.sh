@@ -10,22 +10,14 @@ if [ ! -d "$VENV_DIR" ]; then
 fi
 source $VENV_DIR/bin/activate
 
-
 # Install the dependencies
 echo "Installing dependencies..."
 pip install --no-cache-dir -r requirements.txt || { echo "Failed to install dependencies"; exit 1; }
 
-pip install guardrails-ai
+pip install guardrails-ai better_profanity llama-index gradio azure-storage-blob pandas
 
-pip install better_profanity
-
-pip install --upgrade llama-index
-
-pip install gradio azure-storage-blob llama-index guardrails pandas
- 
+# Upgrade pip and related tools
 pip install --upgrade pip setuptools wheel
-
-pip install guardrails==0.0.5
 
 # Fetch the PORT environment variable from Azure App Service or default to 8000
 PORT=${PORT:-8000}
