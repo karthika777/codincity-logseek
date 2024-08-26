@@ -17,6 +17,6 @@ pip install --no-cache-dir -r requirements.txt || { echo "Failed to install depe
 # Fetch the PORT environment variable from Azure App Service or default to 8000
 PORT=${PORT:-8000}
 
-# Start the application
+# Start the application with Gunicorn
 echo "Starting the application on port $PORT..."
 exec gunicorn --bind 0.0.0.0:$PORT app:app || { echo "Failed to start the application"; exit 1; }
