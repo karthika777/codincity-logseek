@@ -57,7 +57,3 @@ jobs:
           app-name: 'codincity-logseek01'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-
-      - name: Restart Azure Web App
-        run: |
-          az webapp restart --name codincity-logseek01 --resource-group ai-ml-rg
