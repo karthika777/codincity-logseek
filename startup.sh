@@ -6,7 +6,7 @@ VENV_DIR="venv"
 
 # Create and activate the virtual environment
 if [ ! -d "$VENV_DIR" ]; then
-    python -m venv $VENV_DIR
+    python3 -m venv $VENV_DIR
 fi
 source $VENV_DIR/bin/activate
 
