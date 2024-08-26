@@ -1,7 +1,12 @@
 name: Build and deploy Python app to Azure Web App - codincity-logseek01
 
 on:
-	@@ -11,8 +15,7 @@ jobs:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -10,10 +15,14 @@ on:
 
       - name: Set up Python version
         uses: actions/setup-python@v5
-	@@ -23,21 +26,22 @@ jobs:
+        with:
+          python-version: '3.12'
+
+      - name: Create virtual environment
         run: |
           python -m venv aienv
           source aienv/bin/activate
+
       - name: Install dependencies
         run: |
           source aienv/bin/activate
@@ -21,16 +30,24 @@ on:
 
       - name: Zip artifact for deployment
         run: |
-          zip -r release.zip . -x 'venv/*'
+          zip -r release.zip . -x 'aienv/*'
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
           path: release.zip
+
   deploy:
     runs-on: ubuntu-latest
-	@@ -55,10 +59,11 @@ jobs:
+    needs: build
+
+    steps:
+      - name: Download artifact for deployment
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+
       - name: Unzip artifact for deployment
         run: unzip release.zip
 
@@ -40,4 +57,4 @@ on:
         with:
           app-name: 'codincity-logseek01'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
