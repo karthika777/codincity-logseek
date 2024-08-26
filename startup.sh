@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Fail on any error
+
 set -e
 
 # Define the virtual environment directory
