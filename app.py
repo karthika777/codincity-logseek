@@ -3,29 +3,31 @@ from azure.storage.blob import BlobServiceClient
 from llama_index.experimental.query_engine import PandasQueryEngine
 from llama_index.core import Settings
 from llama_index.llms.azure_openai import AzureOpenAI
-from better_profanity import profanity  # Alternative to ProfanityFree
+from better_profanity import profanity
 import pickle
 import time
 from io import BytesIO
 import pandas as pd
+import os
+
 def pickles_from_blob(connection_string, container_name):
-    try: 
+    try:
         blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         container_client = blob_service_client.get_container_client(container_name)
-       
+        
         blobs_list = container_client.list_blobs()
         
         data_frames = []
         
         for blob in blobs_list:
-            if blob.name.endswith('.pkl'):  
+            if blob.name.endswith('.pkl'):
                 blob_client = container_client.get_blob_client(blob.name)
                 
                 blob_stream = BytesIO()
                 blob_client.download_blob().readinto(blob_stream)
                 
                 blob_stream.seek(0)
-          
+            
                 df = pickle.load(blob_stream)
                 data_frames.append(df)
 
@@ -46,28 +48,29 @@ def pickles_from_blob(connection_string, container_name):
         blob_service_client.close()
 
     return concatenated_df
+
 connection_string = "DefaultEndpointsProtocol=https;AccountName=aimlloganalyticstestv1;AccountKey=8owjR6hmh9i1sb5tgntcOVhM7RDLFwMbXcFqyfTeHu2SAo3wcPkttKlhe4wdjN0Q9oQDkkixefhE+AStae87cQ==;EndpointSuffix=core.windows.net"
 container_name = "pickle-files"
 df_final = pickles_from_blob(connection_string, container_name)
- 
+
 Settings.llm = AzureOpenAI(
     engine="gpt-35-turbo",
     model="gpt-35-turbo",
     temperature=0.0,
-azure_endpoint="https://testopenaiforrag123.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-03-15-preview",
+    azure_endpoint="https://testopenaiforrag123.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-03-15-preview",
     api_key="1b60b8b6bdd8474381342caf30f0af14",
     api_version="2023-07-01-preview"
 )
- 
+
 query_engine = PandasQueryEngine(df=df_final, synthesize_response=True, response_mode="compact")
-profanity.load_censor_words()  # Load default profanity words
- 
+profanity.load_censor_words()
+
 chat_history = []
- 
+
 class PersonaAgent:
     def __init__(self, persona):
         self.persona = persona
- 
+
     def handle_query(self, query):
         identity_queries = ["who is this?", "who are you?", "what is your name?"]
         help_queries = ["how can you help me?", "what can you do?", "what is your purpose?", "how can I use you?"]
@@ -94,14 +97,14 @@ class PersonaAgent:
             return None
         
         return response
- 
+
 persona = {
     "name": "LogSeek - AI",
     "role": "your personal log assistant bot"
 }
- 
+
 persona_agent = PersonaAgent(persona)
- 
+
 def my_llm_api(prompt: str = None, **kwargs) -> str:
     if prompt:
         chat_history.append({"role": "user", "content": prompt})
@@ -112,12 +115,12 @@ def my_llm_api(prompt: str = None, **kwargs) -> str:
         chat_history.append({"role": "assistant", "content": response})
         return response
     return "Please provide a prompt."
- 
+
 def guard(func, prompt):
     response = func(prompt=prompt)
-    validated_output = profanity.censor(response.strip())  # Apply profanity filter
+    validated_output = profanity.censor(response.strip())
     return type("GuardRailsResponse", (object,), {"validated_output": validated_output})
- 
+
 def query_model(prompt):
     persona_response = persona_agent.handle_query(prompt)
     if persona_response:
@@ -126,7 +129,7 @@ def query_model(prompt):
         response = query_engine.query(prompt).response
         output = response
     return output
- 
+
 def gradio_interface(query, history):
     output = query_model(query)
     words = output.split()
@@ -135,16 +138,15 @@ def gradio_interface(query, history):
         ans += " " + token
         time.sleep(0.1)
     yield ans
- 
-interface = gr.ChatInterface(
+
+interface = gr.Interface(
     fn=gradio_interface,
     title="LogSeek - AI",
     description="Your personal log assistant bot."
 )
- 
+
 interface.launch()
 
- 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 8000))  # Default to 8000 if PORT is not set
-    iface.launch(server_name="0.0.0.0", server_port=port)
+    interface.launch(server_name="0.0.0.0", server_port=port)
