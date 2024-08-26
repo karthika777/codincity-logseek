@@ -143,3 +143,8 @@ interface = gr.ChatInterface(
 )
  
 interface.launch()
+
+ 
+if __name__ == "__main__":
+    port = int(os.environ.get('PORT', 8000))  # Default to 8000 if PORT is not set
+    iface.launch(server_name="0.0.0.0", server_port=port)
