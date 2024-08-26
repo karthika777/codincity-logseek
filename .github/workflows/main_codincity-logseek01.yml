@@ -1,4 +1,4 @@
-name: Build and Deploy Python App to Azure Web App - codincity-logseek01
+name: Build and deploy Python app to Azure Web App - codincity-logseek01
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           source aienv/bin/activate
-          pip install --no-cache-dir -r requirements.txt
+          pip install -r requirements.txt
 
       - name: Zip artifact for deployment
         run: |
@@ -53,10 +53,11 @@ jobs:
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
           app-name: 'codincity-logseek01'
+          slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
 
-      - name: Restart Azure Web App (Optional)
-        run: az webapp restart --name codincity-logseek01 --resource-group Nandhini-RG
+      - name: Restart Azure Web App
+        run: |
+          az webapp restart --name codincity-logseek01 --resource-group ai-ml-rg
