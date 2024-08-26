@@ -48,17 +48,10 @@ jobs:
         with:
           name: python-app
 
-      - name: Unzip artifact for deployment
-        run: |
-          mkdir -p /home/site/wwwroot
-          unzip release.zip -d /home/site/wwwroot
-
-      - name: Wait before deployment
-        run: sleep 60
-
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'codincity-logseek01'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          package: release.zip
