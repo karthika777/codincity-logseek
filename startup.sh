@@ -1,6 +1,4 @@
 #!/bin/bash
-
-
 set -e
 
 # Define the virtual environment directory
