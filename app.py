@@ -9,7 +9,7 @@ import time
 from io import BytesIO
 import pandas as pd
 def pickles_from_blob(connection_string, container_name):
-    try:
+    try: 
         blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         container_client = blob_service_client.get_container_client(container_name)
        
