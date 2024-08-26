@@ -3,7 +3,7 @@ name: Build and deploy Python app to Azure Web App - codincity-logseek01
 on:
   push:
     branches:
-      - none
+      - main
 
 jobs:
   build:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Zip artifact for deployment
         run: |
-          zip -r release.zip . -x 'aienv/*' -x '.git/*' -x '__pycache__/*' -x 'startup.sh'
+          zip -r release.zip . -x 'aienv/*' -x '.git/*' -x '__pycache__/*'
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
@@ -48,10 +48,15 @@ jobs:
         with:
           name: python-app
 
+      - name: Extract artifact
+        run: unzip release.zip
+
+      - name: Make startup.sh executable
+        run: chmod +x startup.sh
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: codincity-logseek01
           slot-name: Production
           package: release.zip
-       
