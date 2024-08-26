@@ -20,7 +20,7 @@ jobs:
 
       - name: Create virtual environment
         run: |
-          python -m venv aienv
+          python3 -m venv aienv
           source aienv/bin/activate
 
       - name: Install dependencies
