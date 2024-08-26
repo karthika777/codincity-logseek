@@ -56,6 +56,8 @@ llama-index-agent-openai
 llama-index-cli
 llama-index-core
 llama-index-embeddings-openai
+llama-index-experimental==0.1.3
+llama-index-llms-azure-openai==0.1.10
 llama-index-indices-managed-llama-cloud
 llama-index-legacy
 llama-index-llms-openai
