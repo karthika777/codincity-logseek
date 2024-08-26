@@ -62,4 +62,4 @@ jobs:
           app-name: 'test-01'
           # Optional: remove if not using slots
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_TEST }}
