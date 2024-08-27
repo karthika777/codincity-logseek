@@ -3,7 +3,7 @@ set -e
 
 # Define the virtual environment directory
 VENV_DIR="venv"
-
+ 
 # Create and activate the virtual environment
 if [ ! -d "$VENV_DIR" ]; then
     python3 -m venv $VENV_DIR
